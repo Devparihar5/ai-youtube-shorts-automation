@@ -10,7 +10,7 @@ Runs locally on Windows with VS Code. No paid APIs needed.
 Every few hours, automatically:
 
 1. **Finds viral trending topics** (Reddit, Hacker News, Google Trends)
-2. **Generates a viral video idea** using local AI (Ollama)
+2. **Generates a viral video idea** using Gemini AI
 3. **Writes a 30-second script** with hook, curiosity, twist, and loop ending
 4. **Optimizes the hook** for maximum scroll-stop power
 5. **Generates SEO metadata** (title, description, tags, hashtags)
@@ -32,16 +32,16 @@ Scheduler (scheduler.py)
 Trend Discovery ──► Reddit, HackerNews, Google Trends
         │
         ▼
-AI Idea Generator ──► Ollama (local, free)
+AI Idea Generator ──► Gemini API
         │
         ▼
-Script Generator ──► Ollama
+Script Generator ──► Gemini API
         │
         ▼
-Hook Optimizer ──► Ollama
+Hook Optimizer ──► Gemini API
         │
         ▼
-SEO Generator ──► Ollama
+SEO Generator ──► Gemini API
         │
         ▼
 Voice Generator ──► edge-tts (free)
@@ -65,7 +65,7 @@ Analytics ──► Performance tracking + AI feedback
 
 | Tool | Purpose | Cost |
 |------|---------|------|
-| Ollama + LLaMA 3 | AI text generation | Free |
+| Google Gemini | AI text generation | Free tier available |
 | edge-tts | Voice generation | Free |
 | FFmpeg | Video creation | Free |
 | Pexels API | Stock footage | Free (200 req/hr) |
@@ -95,15 +95,16 @@ choco install ffmpeg
 3. Add `C:\ffmpeg\bin` to system PATH
 4. Verify: `ffmpeg -version`
 
-### Step 3: Install Ollama (Local AI)
+### Step 3: Set Up Gemini API
 
-1. Download from https://ollama.com
-2. Install and run
-3. Open terminal:
+1. Open https://aistudio.google.com/app/apikey
+2. Create a free Gemini API key
+3. Add it as an environment variable named `GEMINI_API_KEY`
+4. Optional: create a repo-root `.env` file (recommended). `config/.env` also works for backwards compatibility:
 ```
-ollama pull llama3
+GEMINI_API_KEY=your_key_here
+GEMINI_MODEL=gemini-2.5-flash
 ```
-4. Start Ollama: `ollama serve`
 
 ### Step 4: Open Project in VS Code
 
@@ -239,7 +240,7 @@ youtube_shorts_automation/
 ├── modules/
 │   ├── __init__.py
 │   ├── trend_scraper.py           # Trend discovery (Reddit, HN, Google)
-│   ├── ai_engine.py               # AI generation (Ollama)
+│   ├── ai_engine.py               # AI generation (Gemini)
 │   ├── voice_generator.py         # Voice creation (edge-tts)
 │   ├── footage_fetcher.py         # Stock footage (Pexels + Pixabay)
 │   ├── pixabay_fetcher.py         # Pixabay backup footage source
@@ -337,8 +338,11 @@ Edit `config/settings.py` → `VOICE_NAME`:
 
 ## Troubleshooting
 
-**"Cannot connect to Ollama"**
-→ Make sure Ollama is running: `ollama serve`
+**"GEMINI_API_KEY is missing"**
+→ Add your Gemini API key to the environment or `config/.env`.
+
+**"Gemini returned status 4xx/5xx"**
+→ Verify the API key, quota, and internet connection.
 
 **"FFmpeg not found"**
 → Install FFmpeg and add to PATH. Restart terminal.

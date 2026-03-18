@@ -6,7 +6,7 @@ Ensures hooks are strong, length is right, and content is engaging.
 
 import re
 from typing import Tuple
-from modules.ai_engine import ask_ollama
+from modules.ai_engine import ask_gemini
 from utils import get_logger
 
 log = get_logger("quality")
@@ -123,7 +123,7 @@ Consider:
 
 Return ONLY a single number from 1 to 10. Nothing else:"""
 
-    response = ask_ollama(prompt)
+    response = ask_gemini(prompt)
     try:
         # Extract number from response
         numbers = re.findall(r'\d+', response)
@@ -156,7 +156,7 @@ Rules:
 
 Return ONLY the rewritten script, nothing else:"""
 
-    improved = ask_ollama(prompt)
+    improved = ask_gemini(prompt)
     if improved and len(improved) > 20:
         return improved
     return script  # Return original if improvement fails
