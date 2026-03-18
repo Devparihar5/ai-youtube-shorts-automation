@@ -20,6 +20,5 @@ python-dotenv>=1.0.0
 # Mac: brew install ffmpeg
 # Linux: sudo apt install ffmpeg
 
-# Note: Ollama must be installed separately
-# Download from https://ollama.com
-# Then run: ollama pull llama3
+# Gemini uses the Google Generative Language REST API via requests.
+# Add GEMINI_API_KEY in your environment or .env file.

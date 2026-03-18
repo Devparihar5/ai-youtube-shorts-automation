@@ -49,13 +49,12 @@ YOUTUBE_CLIENT_SECRET_FILE = str(BASE_DIR / "config" / "client_secret.json")
 YOUTUBE_TOKEN_FILE = str(BASE_DIR / "config" / "youtube_token.json")
 
 # ============================================================
-# LOCAL AI (Ollama - 100% FREE)
-# Install: https://ollama.com
-# Then: ollama pull llama3.2:1b
+# GEMINI AI
+# Get a free API key from Google AI Studio: https://aistudio.google.com/apikey
 # ============================================================
-OLLAMA_URL = "http://localhost:11434/api/generate"
-OLLAMA_MODEL = "llama3.2:1b"
-OLLAMA_CHAT_URL = "http://localhost:11434/api/chat"
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+GEMINI_URL = os.getenv("GEMINI_URL", "https://generativelanguage.googleapis.com/v1beta/models")
 
 # ============================================================
 # LANGUAGE SETTINGS
