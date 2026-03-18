@@ -37,21 +37,18 @@ if errorlevel 1 (
 )
 
 echo.
-echo [4/5] Checking Ollama...
-ollama --version >nul 2>&1
-if errorlevel 1 (
+echo [4/5] Checking Gemini API key...
+if "%GEMINI_API_KEY%"=="" (
     echo.
     echo ╔═══════════════════════════════════════════════════╗
-    echo ║  Ollama NOT FOUND!                                ║
+    echo ║  GEMINI_API_KEY NOT SET!                          ║
     echo ║                                                   ║
-    echo ║  Download from: https://ollama.com                ║
-    echo ║  After install run: ollama pull llama3             ║
+    echo ║  Create one at: https://aistudio.google.com       ║
+    echo ║  Then set it before running the app               ║
     echo ╚═══════════════════════════════════════════════════╝
     echo.
 ) else (
-    echo Ollama found!
-    echo Pulling llama3 model...
-    ollama pull llama3
+    echo Gemini API key found!
 )
 
 echo.
@@ -69,7 +66,7 @@ echo ║  NEXT STEPS:                                             ║
 echo ║  1. Get free Pexels API key: https://www.pexels.com/api/ ║
 echo ║  2. Set up YouTube API (see README.md)                   ║
 echo ║  3. Edit config/settings.py with your API keys           ║
-echo ║  4. Start Ollama: ollama serve                           ║
+echo ║  4. Set GEMINI_API_KEY in your environment             ║
 echo ║  5. Test: python main.py --mode test                     ║
 echo ║  6. Dashboard: python dashboard.py                       ║
 echo ╚══════════════════════════════════════════════════════════╝

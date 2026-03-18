@@ -1,56 +1,71 @@
 """
-AI Engine - Local Ollama Integration
+AI Engine - Gemini Integration
 Handles all AI generation: ideas, scripts, SEO, hook optimization.
-100% FREE - runs on your computer via Ollama.
+Powered by Google Gemini via the Generative Language API.
 
 STRATEGY: English scripts + Hindi voice = best quality + maximum reach
 """
 
-import requests
-import json
 import re
-from typing import Optional
-from config.settings import OLLAMA_URL, OLLAMA_MODEL, CONTENT_LANGUAGE
+
+import requests
+
+from config.settings import GEMINI_API_KEY, GEMINI_MODEL, GEMINI_URL
 from utils import get_logger
 
 log = get_logger("ai_engine")
 
 
-def ask_ollama(prompt: str, max_retries: int = 3) -> str:
-    """Send a prompt to Ollama and get response."""
+def ask_gemini(prompt: str, max_retries: int = 3) -> str:
+    """Send a prompt to Gemini and get response text."""
+    if not GEMINI_API_KEY:
+        log.error("GEMINI_API_KEY is missing. Add it to your environment or config/.env file.")
+        return ""
+
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {
+            "temperature": 0.8,
+            "topP": 0.9,
+            "maxOutputTokens": 1500,
+        },
+    }
+
     for attempt in range(max_retries):
         try:
             resp = requests.post(
-                OLLAMA_URL,
-                json={
-                    "model": OLLAMA_MODEL,
-                    "prompt": prompt,
-                    "stream": False,
-                    "options": {
-                        "temperature": 0.8,
-                        "top_p": 0.9,
-                        "num_predict": 1500,
-                    },
-                },
+                f"{GEMINI_URL}?key={GEMINI_API_KEY}",
+                headers={"Content-Type": "application/json"},
+                json=payload,
                 timeout=180,
             )
             if resp.status_code == 200:
                 data = resp.json()
-                return data.get("response", "").strip()
-            else:
-                log.warning(f"Ollama returned status {resp.status_code}")
+                candidates = data.get("candidates", [])
+                if not candidates:
+                    log.warning("Gemini returned no candidates")
+                    return ""
+
+                parts = candidates[0].get("content", {}).get("parts", [])
+                text = "".join(part.get("text", "") for part in parts if part.get("text"))
+                return text.strip()
+
+            log.warning(f"Gemini returned status {resp.status_code}: {resp.text[:200]}")
         except requests.exceptions.ConnectionError:
-            log.error("Cannot connect to Ollama. Make sure it's running: ollama serve")
+            log.error("Cannot connect to Gemini API. Check your internet connection.")
             break
         except Exception as e:
-            log.warning(f"Ollama attempt {attempt+1} failed: {e}")
+            log.warning(f"Gemini attempt {attempt + 1} failed: {e}")
 
     return ""
 
 
+# Backwards-compatible alias for existing imports.
+ask_ollama = ask_gemini
+
+
 def generate_viral_idea(trending_topics: list, niche: dict) -> str:
     """Generate a viral YouTube Shorts idea from trending topics."""
-
     topics_text = "\n".join([f"- {t['title']}" for t in trending_topics[:10]])
     niche_name = niche.get("name", "Technology")
     keywords = ", ".join(niche.get("keywords", []))
@@ -81,12 +96,11 @@ Good examples:
 
 Return ONLY the video idea title (one line, English). Nothing else:"""
 
-    idea = ask_ollama(prompt)
+    idea = ask_gemini(prompt)
     idea = idea.strip().strip('"').strip("'").strip("*").strip("#")
     lines = idea.split("\n")
     idea = lines[0].strip() if lines else idea
-    # Remove any numbering
-    idea = re.sub(r'^\d+[\.\)]\s*', '', idea)
+    idea = re.sub(r"^\d+[\.\)]\s*", "", idea)
 
     log.info(f"Generated idea: {idea}")
     return idea
@@ -94,7 +108,6 @@ Return ONLY the video idea title (one line, English). Nothing else:"""
 
 def generate_script(idea: str) -> str:
     """Generate a 45-55 second YouTube Shorts script in English."""
-
     prompt = f"""You are an expert YouTube Shorts scriptwriter. Write scripts that get MILLIONS of views.
 
 VIDEO IDEA: {idea}
@@ -133,21 +146,21 @@ STRICT RULES:
 
 Write the script now:"""
 
-    script = ask_ollama(prompt)
+    script = ask_gemini(prompt)
 
-    # Clean script thoroughly
     lines = script.split("\n")
     clean_lines = []
     for line in lines:
         line = line.strip()
         if not line:
             continue
-        # Remove ALL labels and formatting
-        skip_patterns = ["HOOK:", "CURIOSITY:", "BODY:", "TWIST:", "CTA:",
-                         "Hook:", "Curiosity:", "Body:", "Twist:", "Cta:",
-                         "EXPLANATION:", "LOOP:", "OPENING:", "CLOSING:",
-                         "**", "##", "---", "```", "Scene", "SCENE",
-                         "[", "(Note", "(note", "Word count"]
+        skip_patterns = [
+            "HOOK:", "CURIOSITY:", "BODY:", "TWIST:", "CTA:",
+            "Hook:", "Curiosity:", "Body:", "Twist:", "Cta:",
+            "EXPLANATION:", "LOOP:", "OPENING:", "CLOSING:",
+            "**", "##", "---", "```", "Scene", "SCENE",
+            "[", "(Note", "(note", "Word count",
+        ]
         should_skip = False
         for pattern in skip_patterns:
             if line.startswith(pattern):
@@ -158,30 +171,23 @@ Write the script now:"""
             continue
 
         line = line.strip().strip("*").strip("#").strip("-").strip('"').strip()
-        # Remove numbering like "1.", "2)", etc
-        line = re.sub(r'^\d+[\.\)]\s*', '', line)
-        # Remove brackets content like [pause], (dramatic)
-        line = re.sub(r'\[.*?\]', '', line)
-        line = re.sub(r'\(.*?\)', '', line)
+        line = re.sub(r"^\d+[\.\)]\s*", "", line)
+        line = re.sub(r"\[.*?\]", "", line)
+        line = re.sub(r"\(.*?\)", "", line)
         line = line.strip()
 
         if line and len(line) > 3:
             clean_lines.append(line)
 
     script = " ".join(clean_lines)
-
-    # Ensure minimum length
     word_count = len(script.split())
     log.info(f"Generated script ({word_count} words): {script[:120]}...")
-
     return script
 
 
 def optimize_hook(script: str) -> str:
     """Rewrite the hook (first sentence) to maximize retention."""
-
-    # Get first sentence
-    sentences = re.split(r'[.!?]', script)
+    sentences = re.split(r"[.!?]", script)
     first_sentence = sentences[0].strip() if sentences else script[:60]
 
     prompt = f"""You are the world's best YouTube Shorts hook writer.
@@ -206,18 +212,14 @@ Best performing hook patterns:
 
 Return ONLY the new hook. One sentence. Nothing else:"""
 
-    new_hook = ask_ollama(prompt)
+    new_hook = ask_gemini(prompt)
     new_hook = new_hook.strip().strip('"').strip("'").split("\n")[0]
-    new_hook = re.sub(r'^\d+[\.\)]\s*', '', new_hook).strip()
+    new_hook = re.sub(r"^\d+[\.\)]\s*", "", new_hook).strip()
 
     if new_hook and len(new_hook) > 5 and len(new_hook.split()) <= 15:
-        # Replace first sentence with new hook
-        rest_parts = re.split(r'[.!?]', script, 1)
+        rest_parts = re.split(r"[.!?]", script, 1)
         rest = rest_parts[1].strip() if len(rest_parts) > 1 else ""
-        if rest:
-            script = f"{new_hook}. {rest}"
-        else:
-            script = f"{new_hook}. {script}"
+        script = f"{new_hook}. {rest}" if rest else f"{new_hook}. {script}"
 
     log.info(f"Optimized hook: {new_hook}")
     return script
@@ -225,7 +227,6 @@ Return ONLY the new hook. One sentence. Nothing else:"""
 
 def generate_seo(idea: str, script: str) -> dict:
     """Generate SEO metadata. ALWAYS IN ENGLISH."""
-
     prompt = f"""You are a YouTube SEO expert who creates viral titles.
 
 VIDEO IDEA: {idea}
@@ -247,13 +248,15 @@ TITLE: 🔬 Scientists Found Something Terrifying #Shorts
 
 Return ONLY the metadata:"""
 
-    response = ask_ollama(prompt)
+    response = ask_gemini(prompt)
 
     seo = {
         "title": f"😱 {idea} #Shorts",
         "description": f"{idea}. Watch this incredible short! #Shorts #Viral #Facts",
-        "tags": ["shorts", "viral", "facts", "trending", "amazing", "mind blown",
-                 "education", "science", "technology", "motivation"],
+        "tags": [
+            "shorts", "viral", "facts", "trending", "amazing", "mind blown",
+            "education", "science", "technology", "motivation",
+        ],
         "hashtags": ["#Shorts", "#Viral", "#Facts", "#Trending", "#Amazing"],
     }
 
@@ -261,13 +264,12 @@ Return ONLY the metadata:"""
         line = line.strip()
         if line.upper().startswith("TITLE:"):
             title = line.split(":", 1)[1].strip()[:100]
-            # Strip any Devanagari characters
-            clean = "".join(c for c in title if not ('\u0900' <= c <= '\u097F'))
+            clean = "".join(c for c in title if not ("\u0900" <= c <= "\u097F"))
             if clean.strip():
                 seo["title"] = clean.strip()
         elif line.upper().startswith("DESCRIPTION:"):
             desc = line.split(":", 1)[1].strip()
-            clean = "".join(c for c in desc if not ('\u0900' <= c <= '\u097F'))
+            clean = "".join(c for c in desc if not ("\u0900" <= c <= "\u097F"))
             if clean.strip():
                 seo["description"] = clean.strip()
         elif line.upper().startswith("TAGS:"):
@@ -281,7 +283,6 @@ Return ONLY the metadata:"""
             if hts:
                 seo["hashtags"] = hts
 
-    # Ensure #Shorts is always present
     if "#Shorts" not in seo["hashtags"]:
         seo["hashtags"].insert(0, "#Shorts")
     if "#Shorts" not in seo["title"]:
@@ -293,7 +294,6 @@ Return ONLY the metadata:"""
 
 def generate_search_keywords(script: str) -> list:
     """Generate search keywords for finding stock footage."""
-
     prompt = f"""You need to find stock video clips for a YouTube Short.
 
 SCRIPT: {script[:300]}
@@ -304,19 +304,18 @@ Each keyword must be a VISUAL thing that can be filmed.
 Rules:
 - 1-3 words each
 - Must be something you can SEE in a video
-- Good: "robot arm", "stock market screen", "brain scan", "dark city night", "person typing"  
+- Good: "robot arm", "stock market screen", "brain scan", "dark city night", "person typing"
 - Bad: "innovation", "concept", "idea", "future"
 - Make keywords SPECIFIC not generic
 - Each keyword on its own line
 
 Return ONLY 5 keywords:"""
 
-    response = ask_ollama(prompt)
+    response = ask_gemini(prompt)
     keywords = []
     for line in response.split("\n"):
         kw = line.strip().strip("-").strip("*").strip("0123456789.").strip()
-        kw = re.sub(r'^\d+[\.\)]\s*', '', kw).strip()
-        # Remove quotes
+        kw = re.sub(r"^\d+[\.\)]\s*", "", kw).strip()
         kw = kw.strip('"').strip("'")
         if kw and len(kw) > 1 and len(kw) < 30 and not kw.startswith("("):
             keywords.append(kw)
@@ -329,6 +328,6 @@ Return ONLY 5 keywords:"""
 
 
 if __name__ == "__main__":
-    print("Testing Ollama connection...")
-    result = ask_ollama("Say 'AI Engine is working!' in one line.")
+    print(f"Testing Gemini connection with model: {GEMINI_MODEL}...")
+    result = ask_gemini("Say 'AI Engine is working!' in one line.")
     print(f"Response: {result}")

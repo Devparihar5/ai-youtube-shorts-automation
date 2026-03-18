@@ -34,7 +34,7 @@ def print_system_status():
     checks = {
         "Python": True,
         "FFmpeg": False,
-        "Ollama": False,
+        "Gemini API key": False,
         "edge-tts": False,
         "YouTube API libs": False,
     }
@@ -47,11 +47,10 @@ def print_system_status():
     except Exception:
         pass
 
-    # Check Ollama
+    # Check Gemini config
     try:
-        import requests
-        r = requests.get("http://localhost:11434/api/tags", timeout=3)
-        checks["Ollama"] = r.status_code == 200
+        from config.settings import GEMINI_API_KEY
+        checks["Gemini API key"] = bool(GEMINI_API_KEY)
     except Exception:
         pass
 

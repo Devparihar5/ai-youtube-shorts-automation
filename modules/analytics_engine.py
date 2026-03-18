@@ -172,7 +172,7 @@ def get_performance_summary() -> dict:
 
 def generate_ai_feedback() -> str:
     """Generate AI-powered optimization feedback."""
-    from modules.ai_engine import ask_ollama
+    from modules.ai_engine import ask_gemini
 
     summary = get_performance_summary()
     if summary["total_videos"] == 0:
@@ -208,7 +208,7 @@ Analyze this data and provide:
 
 Be specific and actionable. Keep it concise."""
 
-    feedback = ask_ollama(prompt)
+    feedback = ask_gemini(prompt)
     
     # Save feedback
     feedback_data = {
