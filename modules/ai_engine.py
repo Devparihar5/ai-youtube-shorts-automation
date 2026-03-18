@@ -19,7 +19,7 @@ log = get_logger("ai_engine")
 def ask_gemini(prompt: str, max_retries: int = 3) -> str:
     """Send a prompt to Gemini and get response text."""
     if not GEMINI_API_KEY:
-        log.error("GEMINI_API_KEY is missing. Add it to your environment or config/.env file.")
+        log.error("GEMINI_API_KEY is missing. Add it to your environment, repo-root .env, or config/.env file.")
         return ""
 
     payload = {

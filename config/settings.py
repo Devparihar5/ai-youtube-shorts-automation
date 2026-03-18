@@ -6,12 +6,19 @@ All settings in one place. Fill in your API keys.
 import os
 from pathlib import Path
 
-# Load .env file if python-dotenv is installed
+# Load .env files if python-dotenv is installed.
+# Prefer the repo root .env, and also support config/.env for backwards compatibility.
 try:
     from dotenv import load_dotenv
-    _env_path = Path(__file__).resolve().parent.parent / ".env"
-    if _env_path.exists():
-        load_dotenv(_env_path)
+
+    _base_dir = Path(__file__).resolve().parent.parent
+    _env_paths = [
+        _base_dir / ".env",
+        _base_dir / "config" / ".env",
+    ]
+    for _env_path in _env_paths:
+        if _env_path.exists():
+            load_dotenv(_env_path)
 except ImportError:
     pass  # python-dotenv is optional
 
@@ -51,10 +58,10 @@ YOUTUBE_TOKEN_FILE = str(BASE_DIR / "config" / "youtube_token.json")
 # ============================================================
 # GEMINI AI
 # Get a free API key: https://aistudio.google.com/app/apikey
-# Add GEMINI_API_KEY to your environment or config/.env
+# Add GEMINI_API_KEY to your environment, repo-root .env, or config/.env
 # ============================================================
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 GEMINI_URL = os.getenv(
     "GEMINI_URL",
     f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent",

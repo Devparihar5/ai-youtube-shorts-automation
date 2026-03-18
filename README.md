@@ -100,10 +100,10 @@ choco install ffmpeg
 1. Open https://aistudio.google.com/app/apikey
 2. Create a free Gemini API key
 3. Add it as an environment variable named `GEMINI_API_KEY`
-4. Optional: create a `config/.env` file with:
+4. Optional: create a repo-root `.env` file (recommended). `config/.env` also works for backwards compatibility:
 ```
 GEMINI_API_KEY=your_key_here
-GEMINI_MODEL=gemini-1.5-flash
+GEMINI_MODEL=gemini-2.5-flash
 ```
 
 ### Step 4: Open Project in VS Code
